@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Phishing Email Detector</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 36px 16px; background: #0b1220; color: #e5e7eb; font-family: Arial, sans-serif; }
+    .wrap { max-width: 920px; margin: auto; }
+    header { margin-bottom: 24px; }
+    .eyebrow { color: #60a5fa; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: bold; }
+    h1 { margin: 8px 0; font-size: clamp(28px, 5vw, 42px); }
+    .muted { color: #9ca3af; }
+    .panel { background: #111c2e; border: 1px solid #26364d; border-radius: 16px; padding: 24px; margin: 18px 0; }
+    label { display: block; font-weight: bold; margin-bottom: 10px; }
+    textarea { width: 100%; min-height: 220px; resize: vertical; padding: 15px; color: #e5e7eb; background: #091321; border: 1px solid #34445c; border-radius: 10px; font: 14px/1.5 Arial, sans-serif; }
+    button { margin-top: 14px; border: 0; border-radius: 9px; padding: 13px 22px; background: #2563eb; color: white; font-size: 15px; font-weight: bold; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    .error { border: 1px solid #7f1d1d; background: #35151b; color: #fecaca; padding: 13px; border-radius: 9px; }
+    .status { font-size: 22px; font-weight: bold; }
+    .bad { color: #f87171; } .good { color: #4ade80; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 18px; }
+    .metric { background: #0b1627; padding: 15px; border-radius: 10px; border: 1px solid #26364d; }
+    .metric strong { display: block; font-size: 23px; margin-top: 6px; }
+    .tag { display: inline-block; background: #26364d; color: #bfdbfe; padding: 5px 9px; border-radius: 20px; margin: 4px 4px 0 0; font-size: 13px; }
+    li { margin: 8px 0; overflow-wrap: anywhere; }
+    footer { color: #8492a6; font-size: 12px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Cybersecurity · Machine Learning</div>
+    <h1>AI Phishing Email Detector</h1>
+    <div class="muted">Paste an email message to check for phishing indicators.</div>
+  </header>
+
+  <section class="panel">
+    <form method="POST">
+      <label for="email">Email content</label>
+      <textarea id="email" name="email" maxlength="20000" placeholder="Paste the sender, subject and email body here..." required>{{ email }}</textarea>
+      <button type="submit">Analyze email</button>
+    </form>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  </section>
+
+  {% if result %}
+  <section class="panel">
+    {% if result.prediction == 1 %}
+      <div class="status bad">⚠ PHISHING DETECTED</div>
+      <p class="muted">The model classified this message as phishing.</p>
+    {% else %}
+      <div class="status good">✓ LIKELY LEGITIMATE</div>
+      <p class="muted">The model classified this message as legitimate. This does not guarantee that it is safe.</p>
+    {% endif %}
+    <div class="grid">
+      <div class="metric"><span class="muted">Risk score</span><strong>{{ result.score }}%</strong></div>
+      <div class="metric"><span class="muted">Email length</span><strong>{{ result.length }}</strong></div>
+      <div class="metric"><span class="muted">URLs found</span><strong>{{ result.urls|length }}</strong></div>
+      <div class="metric"><span class="muted">Exclamation marks</span><strong>{{ result.exclamations }}</strong></div>
+    </div>
+    <p class="muted">Score meaning: {{ result.score_label }}. It is a model indicator, not a guarantee.</p>
+    <h3>Suspicious words</h3>
+    {% if result.words %}{% for word in result.words %}<span class="tag">{{ word }}</span>{% endfor %}{% else %}<p class="muted">No words from the indicator list were found.</p>{% endif %}
+    <h3>Links found</h3>
+    {% if result.urls %}<ul>{% for url in result.urls %}<li>{{ url }}</li>{% endfor %}</ul>{% else %}<p class="muted">No URLs detected.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if history %}
+  <section class="panel">
+    <h2>Recent analyses</h2>
+    {% for item in history %}
+      <p><strong class="{{ 'bad' if item.prediction == 1 else 'good' }}">{{ 'PHISHING' if item.prediction == 1 else 'LEGITIMATE' }}</strong> · {{ item.score }}%<br><span class="muted">{{ item.preview }}</span></p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <footer>Model: {{ model_name }} · For educational and defensive use. Do not open suspicious links.</footer>
+</div>
+</body>
+</html>
